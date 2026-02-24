@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HiArrowLeft, HiOutlineViewfinderCircle, HiOutlineDevicePhoneMobile } from 'react-icons/hi2';
 import menuData from '../data/menuData';
@@ -8,6 +8,8 @@ function ARViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [placement, setPlacement] = useState('floor'); // 'floor' | 'wall'
+  const modelRef = useRef(null);
 
   const item = menuData.find((m) => m.id === Number(id));
 
@@ -19,13 +21,17 @@ function ARViewer() {
   useEffect(() => {
     setLoading(true);
     const interval = setInterval(() => {
-      const viewer = document.querySelector('model-viewer');
+      const viewer = modelRef.current;
       if (!viewer) return;
       clearInterval(interval);
       viewer.addEventListener('load', () => setLoading(false), { once: true });
     }, 80);
     return () => clearInterval(interval);
   }, [id]);
+
+  const togglePlacement = () => {
+    setPlacement(prev => prev === 'floor' ? 'wall' : 'floor');
+  };
 
   if (!item) {
     return (
@@ -71,11 +77,13 @@ function ARViewer() {
           model-viewer auto-hides it if AR is not supported.
         */}
         <model-viewer
+          ref={modelRef}
           id="ar-model-viewer"
           src={item.modelUrl}
           alt={`3D model of ${item.name}`}
           ar
           ar-modes="webxr scene-viewer quick-look"
+          ar-placement={placement}
           camera-controls
           shadow-intensity="1"
           auto-rotate
@@ -89,6 +97,20 @@ function ARViewer() {
             View in Your Space
           </button>
         </model-viewer>
+
+        {/* ─── Placement toggle ─── */}
+        {!loading && (
+          <button
+            className="placement-toggle"
+            onClick={togglePlacement}
+            title={`Switch to ${placement === 'floor' ? 'wall' : 'floor'} placement`}
+          >
+            <span className="placement-icon">{placement === 'floor' ? '🪑' : '🖼️'}</span>
+            <span className="placement-label">
+              {placement === 'floor' ? 'Floor' : 'Wall'}
+            </span>
+          </button>
+        )}
 
         {/* ─── Desktop / HTTP warning banner ─── */}
         {!loading && (!isMobile || !isHttps) && (

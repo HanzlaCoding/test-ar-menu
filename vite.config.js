@@ -7,11 +7,10 @@ export default defineConfig({
     plugins: [
         react(),
         tailwindcss(),
-        // Enables self-signed HTTPS — required for WebXR camera AR on mobile
         basicSsl(),
     ],
     server: {
-        host: true,   // expose to your local network (WiFi) so phone can reach it
-        https: true,  // serve over HTTPS
+        host: true,
+        https: true,
     },
 });

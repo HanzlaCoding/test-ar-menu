@@ -379,10 +379,11 @@ model-viewer {
 .ar-trigger {
   /* model-viewer positions slot buttons; we override with absolute */
   position: absolute;
-  bottom: 100px;
+  /* Sit above the bottom info card (~100px) + extra breathing room */
+  bottom: 130px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
+  z-index: 45;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -405,6 +406,36 @@ model-viewer {
   box-shadow: 0 14px 40px var(--gold-glow);
 }
 .ar-trigger:active { filter: brightness(0.96); }
+
+/* Placement toggle button — top-right corner of viewer */
+.placement-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-active);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text-200);
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+.placement-toggle:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--bg-card);
+}
+.placement-icon { font-size: 20px; line-height: 1; }
+.placement-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
 /* Info panel at bottom of viewer */
 .viewer-info {
@@ -466,7 +497,8 @@ model-viewer {
    ============================================= */
 .ar-warning {
   position: absolute;
-  top: 16px;
+  /* Push below the fixed topbar (≈62px) so it doesn't overlap */
+  top: 78px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -484,4 +516,20 @@ model-viewer {
   font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
+}
+
+/* On very small screens, collapse the name modal to not obscure the AR button */
+@media (max-height: 700px) {
+  .viewer-info-card {
+    padding: 8px 12px;
+  }
+  .viewer-info-thumb {
+    width: 36px;
+    height: 36px;
+  }
+  .ar-trigger {
+    bottom: 115px;
+    padding: 12px 24px;
+    font-size: 14px;
+  }
 }

@@ -20,13 +20,34 @@ function ARViewer() {
 
   useEffect(() => {
     setLoading(true);
-    const interval = setInterval(() => {
+
+    // Use rAF to ensure the ref is attached before we try to access it
+    const raf = requestAnimationFrame(() => {
       const viewer = modelRef.current;
-      if (!viewer) return;
-      clearInterval(interval);
-      viewer.addEventListener('load', () => setLoading(false), { once: true });
-    }, 80);
-    return () => clearInterval(interval);
+
+      // If ref somehow isn't ready, just hide the loader
+      if (!viewer) { setLoading(false); return; }
+
+      // If model-viewer already finished loading (e.g. browser cache), skip waiting
+      if (viewer.loaded) { setLoading(false); return; }
+
+      const done = () => setLoading(false);
+
+      viewer.addEventListener('load',  done, { once: true });
+      viewer.addEventListener('error', done, { once: true }); // show model even on error
+
+      // ⚠️ Safety net: if neither fires in 10 s, unlock interaction anyway
+      const timeout = setTimeout(done, 10000);
+
+      // Cleanup when id changes or component unmounts
+      return () => {
+        viewer.removeEventListener('load',  done);
+        viewer.removeEventListener('error', done);
+        clearTimeout(timeout);
+      };
+    });
+
+    return () => cancelAnimationFrame(raf);
   }, [id]);
 
   const togglePlacement = () => {
@@ -59,11 +80,14 @@ function ARViewer() {
       </header>
 
       {/* ─── Viewer ─── */}
-      <div style={{ flex: 1, position: 'relative', marginTop: 62 }}>
+      <div style={{ position: 'relative', marginTop: 62, height: 'calc(100vh - 62px)', overflow: 'hidden' }}>
 
-        {/* Loading overlay */}
+        {/*
+          Loading overlay — pointer-events:none ensures it NEVER blocks
+          the model-viewer canvas even while still visible
+        */}
         {loading && (
-          <div className="loading-screen fade-in">
+          <div className="loading-screen fade-in" style={{ pointerEvents: 'none' }}>
             <div className="loader-ring" />
             <p style={{ fontSize: 13, color: 'var(--text-400)', fontWeight: 500 }}>Loading 3D model…</p>
           </div>
@@ -71,7 +95,7 @@ function ARViewer() {
 
         {/*
           model-viewer handles AR natively.
-          - Android: Scene Viewer (opens in Google AR)
+          - Android : Scene Viewer (opens in Google AR)
           - iOS Safari: Quick Look (opens in Apple AR)
           The slot="ar-button" is the ONLY way to trigger AR correctly.
           model-viewer auto-hides it if AR is not supported.
@@ -99,18 +123,14 @@ function ARViewer() {
         </model-viewer>
 
         {/* ─── Placement toggle ─── */}
-        {!loading && (
-          <button
-            className="placement-toggle"
-            onClick={togglePlacement}
-            title={`Switch to ${placement === 'floor' ? 'wall' : 'floor'} placement`}
-          >
-            <span className="placement-icon">{placement === 'floor' ? '🪑' : '🖼️'}</span>
-            <span className="placement-label">
-              {placement === 'floor' ? 'Floor' : 'Wall'}
-            </span>
-          </button>
-        )}
+        <button
+          className="placement-toggle"
+          onClick={togglePlacement}
+          title={`Switch to ${placement === 'floor' ? 'wall' : 'floor'} placement`}
+        >
+          <span className="placement-icon">{placement === 'floor' ? '🪑' : '🖼️'}</span>
+          <span className="placement-label">{placement === 'floor' ? 'Floor' : 'Wall'}</span>
+        </button>
 
         {/* ─── Desktop / HTTP warning banner ─── */}
         {!loading && (!isMobile || !isHttps) && (
